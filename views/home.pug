@@ -1,0 +1,139 @@
+extends layout
+
+block content
+
+  - var tradeClosedPrepend = ''
+
+  if searchQuery
+    div.text-center.top-text.top-text-small
+      span Keep this tab open & we'll let you know of any new posts matching your search
+  else
+    div.text-center.top-text Search & Browse &nbsp;
+      a(href="https://www.reddit.com/r/GlobalOffensiveTrade" rel="noopener").top-link /r/GOTrade
+
+  form(id="search-form" action="/search" method="get").search-form.col-md-auto
+    select(name="type" aria-label="Search Type").search-select.custom-select
+      mixin search-option(value, name)
+        if (searchType == value)
+          option(value=value, selected)= name
+        else
+          option(value=value)= name
+      +search-option(1, "(Others) Have")
+      +search-option(2, "(Others) Want")
+      +search-option(4, "Price Check")
+    if searchQuery
+      input(type="text" name="q" placeholder="Search" aria-label="Search Input" autocapitalize="off" autocomplete="off" autocorrect="off" value=searchQuery).form-control
+    else
+      input(type="text" name="q" placeholder="Search" aria-label="Search Input" autocapitalize="off" autocomplete="off" autocorrect="off").form-control
+    button(type="submit" aria-label="Submit Search").btn.btn-danger.btn-search
+      i.icon-search
+
+    .search-tips-wrap(data-opened="0")
+      a(tabindex="0" href="#").search-tips-link SEARCH TIPS
+
+    .search-tips-body.hidden
+      span  Exclude terms ~ <b>karambit -tiger</b><br>Exact search ~ <b>"m9 bayonet lore"</b>
+
+    .switches-wrap
+
+      if !searchQuery
+        span.live-switch-wrap.switch-wrap
+          label(for="live-updates").switch-label-text Live
+          label.switch
+            input(id="live-updates" type="checkbox" name="live" checked="")
+            span.slider
+
+      span.store-switch-wrap
+       span.switch-wrap
+          label(for="show-store").switch-label-text Show [Store]
+          label.switch
+            if searchShowStore == 1
+              input(id="show-store", type="checkbox", name="show_store" checked="")
+            else
+              input(id="show-store", type="checkbox", name="show_store")
+            span.slider
+
+      span.dark-mode-switch-wrap
+        span.dark-mode-wrap
+          label(for="dark-mode").switch-label-text Dark Mode
+          label.switch
+            if darkMode == 1
+              input(id="dark-mode", type="checkbox", name="dark_mode" checked)
+            else
+              input(id="dark-mode", type="checkbox", name="dark_mode")
+            span.slider
+
+  div#trades-wrap(data-total-count=totalResult)
+
+    div.trades-inner-wrap
+
+      if trades.length > 0
+
+        .row.trade-row-header
+          .col Time
+          .col-5 Have
+          .col-5 Want
+
+        each trade in trades
+          .row.trade-row(tabindex="0")
+            .trade(data-id=trade.id data-opened=0 data-steamid=trade.steamid data-closed=trade.closed data-link=trade.link).link
+              time.timeago.col(datetime=new Date(trade.time*1000).toISOString())
+              |
+              if trade.closed == 1
+                - tradeClosedPrepend = '<span class="trade-closed-inline">[Closed]</span> ';
+              else
+                - tradeClosedPrepend = '';
+              if trade.type == 3
+                .col-10!= tradeClosedPrepend + "[Store] " + trade.have
+              else if trade.type == 4
+                .col-10!= tradeClosedPrepend +  "[PC] " + trade.have
+              else if (trade.type == 1 || trade.type == 2)
+                .col-5.trade-have!= tradeClosedPrepend + trade.have
+                |
+                .col-5.trade-want!= trade.want
+
+            a(href="https://www.reddit.com/r/GlobalOffensiveTrade/comments/" + trade.link, target="_blank" rel="noopener" title="Open on Reddit").trade-reddit-link.btn
+              i.icon-external-link
+
+            div.trade-body-wrap
+              .trade-body-top
+                span.trade-username!= 'By <a href="https://www.reddit.com/user/' + trade.username + '" target="_blank" rel="noopener">/u/' + trade.username + '</a>'
+                span.trade-status &nbsp; &mdash; &nbsp;
+                  if trade.closed
+                    b.trade-closed(title="This trade has been marked as closed or was removed or deleted.") Closed
+                  else
+                    span.trade-status-inner Fetching status...
+              .trade-body
+
+        #trade-row-markup.trade-row-js.row.trade-row.hidden
+          .trade(href="#" data-id=0 data-steamid=0 data-opened=0 data-closed=0 data-link="").link
+            time.timeago.col(datetime=0)
+            |
+            .col-5.trade-have
+            |
+            .col-5.trade-want
+
+          a(href="https://www.reddit.com/r/GlobalOffensiveTrade/comments/", target="_blank" rel="noopener" title="Open on Reddit").trade-reddit-link.btn
+            i.icon-external-link
+
+          div.trade-body-wrap
+            .trade-body-top
+              span.trade-username
+              span.trade-status &nbsp; &mdash; &nbsp;&nbsp;
+                  span.trade-status-inner ...
+            .trade-body
+
+        if pageCount > 1 && ((+currentPage + 1) <= pageCount)
+          ul.pagination
+            li
+              if searchQuery
+                a(href= "/search?type="+searchType+"&q="+searchQueryRaw+"&show_store="+searchShowStore+"&page=" + (+currentPage + 1))
+              else
+                a(href= "/?page=" + (+currentPage + 1))
+
+      else if errorMsg != undefined
+        div.search-no-results-text= errorMsg
+      else
+        div.search-no-results-text Sorry, no results returned 🙃<br>We'll keep checking for any new results in the background
+
+  <div id="infinite-scroll-loading"><span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>

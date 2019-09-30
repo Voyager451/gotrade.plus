@@ -1,0 +1,25 @@
+doctype html
+
+- var dark_mode_style = '';
+if (darkMode != undefined && darkMode == 1)
+  - dark_mode_style = 'dark-mode';
+
+html(lang='en' class=dark_mode_style)
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
+    meta(name='theme-color' content='#bf2a2a')
+    title GOTrade+ &bullet; Search & Browse /r/GlobalOffensiveTrade
+    link(rel='shortcut icon', href='/favicon.png?v=6')
+    link(rel='stylesheet', href='/css/lib.css?v=1')
+    link(rel='stylesheet', href='/css/main.css?v=77')
+    link(rel='stylesheet', href='//fonts.googleapis.com/css?family=Montserrat:500,700')
+
+  body
+    include partials/header
+
+    .container
+      block content
+
+    script(src='/js/lib/socket.io.slim.js')
+    script(src='/js/main.js?v=77')

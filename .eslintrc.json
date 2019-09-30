@@ -1,0 +1,28 @@
+{
+  "extends": "airbnb",
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true,
+    "mocha": true
+  },
+  "rules": {
+    "indent": [ 2, 4 ],
+    "padded-blocks": ["error", { "classes": "always" }],
+    "no-trailing-spaces": "off",
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+    "prefer-const": 1,
+    "complexity": [ 1, 5 ],
+    "no-use-before-define": "off",
+    "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],
+
+    "react/prefer-es6-class": 1,
+    "react/jsx-filename-extension": 0,
+    "react/jsx-curly-spacing": [ 2, "always" ],
+    "react/jsx-indent": [ 2, 4 ],
+    "react/jsx-indent-props": [ 2, 4 ],
+    "react/prefer-stateless-function": 0,
+
+    "jsx-a11y/label-has-for": 0
+  }
+}
