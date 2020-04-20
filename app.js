@@ -1,4 +1,3 @@
-"use strict";
 
 /**
  * Module dependencies.
@@ -16,7 +15,7 @@ const RedisStore = require('connect-redis')(session);
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
-dotenv.load({path: '.env'});
+dotenv.load({ path: '.env' });
 
 /**
  * Create Express server.
@@ -34,27 +33,27 @@ app.set('view engine', 'pug');
 app.use(cookieParser());
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
-	resave: true,
-	saveUninitialized: true,
-	secret: process.env.SESSION_SECRET,
-	store: new RedisStore({
-		client: redis,
-	})
+    resave: true,
+    saveUninitialized: true,
+    secret: process.env.SESSION_SECRET,
+    store: new RedisStore({
+        client: redis,
+    }),
 }));
 
 function darkModeMiddleware(req, res, next) {
-	app.locals.darkMode = 0;
-	if (
-		req.cookies != undefined
+    app.locals.darkMode = 0;
+    if (
+        req.cookies != undefined
 		&& req.cookies.darkMode != undefined
 		&& req.cookies.darkMode == 1
-	) {
-		app.locals.darkMode = 1;
-	}
-	next();
+    ) {
+        app.locals.darkMode = 1;
+    }
+    next();
 }
 
 app.use(darkModeMiddleware);
@@ -63,6 +62,7 @@ app.use(darkModeMiddleware);
  * Routes
  */
 const appRoutes = require('./routes/routes');
+
 app.use('/', appRoutes);
 
 /**
@@ -74,10 +74,11 @@ app.use(errorHandler());
  * Start Express server.
  */
 const server = app.listen(app.get('port'), () => {
-	console.log('  App is running at http://localhost:%d in %s mode', app.get('port'), app.get('env'));
+    console.log('  App is running at http://localhost:%d in %s mode', app.get('port'), app.get('env'));
 });
 
 const homeController = require('./controllers/home');
+
 homeController.passApp(app);
 
 /**
