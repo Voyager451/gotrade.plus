@@ -6,7 +6,8 @@
   "author": "https://github.com/Voyager451",
   "repository": "Voyager451/gotrade.plus",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "deploy-prod": "git pull && cross-env NODE_ENV=production npm install && service gotrade-app restart"
   },
   "engines": {
     "node": ">=10.16.3"
@@ -16,6 +17,7 @@
     "compression": "^1.7.0",
     "connect-redis": "^3.3.2",
     "cookie-parser": "^1.4.3",
+    "cross-env": "^7.0.2",
     "dotenv": "^4.0.0",
     "errorhandler": "^1.5.0",
     "express": "^4.15.4",
