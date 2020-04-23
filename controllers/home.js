@@ -1,5 +1,7 @@
+const helpers = require('../helpers.js');
 
 const Snooper = require('reddit-snooper');
+const snoowrap = require('snoowrap');
 const mysql = require('../config/mysql').mysql_pool;
 const marked = require('marked');
 
@@ -11,17 +13,27 @@ exports.passApp = function (_app) {
 // Setup reddit snooper
 const redditSnooper = new Snooper({
     // credential information is not needed for snooper.watcher
-    username: 'reddit_username',
-    password: 'reddit_password',
-    app_id: process.env.REDDIT_APP_ID,
-    api_secret: process.env.REDDIT_API_SECRET,
-    user_agent: 'GOTrade.plus Bot',
+    username: process.env.REDDIT_USERNAME,
+    password: process.env.REDDIT_PASSWORD,
+    app_id: process.env.REDDIT_CLIENT_ID,
+    api_secret: process.env.REDDIT_CLIENT_SECRET,
+    user_agent: process.env.REDDIT_USER_AGENT,
 
     automatic_retries: true,
     requests_per_minuite: 1, // yes, minute is misspelled
 });
 
+const redditApi = new snoowrap({
+    userAgent: process.env.REDDIT_USER_AGENT,
+    clientId: process.env.REDDIT_CLIENT_ID,
+    clientSecret: process.env.REDDIT_CLIENT_SECRET,
+    //refreshToken: process.env.REDDIT_REFRESH_TOKEN,
+    username: process.env.REDDIT_USERNAME,
+    password: process.env.REDDIT_PASSWORD,
+});
+
 // Watch for new posts on our subreddit
+// TODO:: rewrite using 'snoowrap' lib
 redditSnooper.watcher.getPostWatcher('GlobalOffensiveTrade')
 
     .on('post', (post) => {
@@ -120,7 +132,7 @@ function addPost(type, have, want, data) {
             console.log(`Error: Failed to conn to DB: ${err}`);
         }
 
-        conn.query('INSERT INTO trades SET ?', trade_data, (err, results) => {
+        conn.query('INSERT IGNORE INTO trades SET ?', trade_data, (err, results) => {
             conn.release();
 
             if (err || (results == undefined)) {
@@ -193,49 +205,46 @@ function parseTradeBody(trade_body) {
 
 exports.getTradeLiveData = (req, res) => {
 
-    const trade_id = req.body.id;
-    const { article_id } = req.body;
+    const tradeId = req.body.id;
+    const { article_id: articleId } = req.body;
 
-    if (trade_id != undefined && article_id != undefined) {
+    if (tradeId !== undefined && articleId !== undefined) {
 
-        const get_article_endpoint = `r/GlobalOffensiveTrade/comments/${article_id}/_`;
+        redditApi
+            .getSubmission(articleId)
+            .fetch()
+            .then((result) => {
 
-        redditSnooper.api.get(get_article_endpoint, {}, (err, responseCode, responseData) => {
+                let tradeClosed = 0;
+                let tradeBody = '';
+                let steamId = 0;
 
-            if (err) {
-                console.error(`snooper get article api request failed: ${err}`);
-                res.json({ status: 0 });
-                return;
-            }
-
-            let trade_closed = 0;
-            let trade_body = '';
-            let steamid = 0;
-
-            if (responseCode == 200) {
                 // Trades are closed by marking them as NSFW (over-18)
-                trade_closed = responseData[0].data.children[0].data.over_18;
+                tradeClosed = result.over_18;
                 // Close it if body is [removed] (by mods) or [deleted] (by user)
-                trade_body = responseData[0].data.children[0].data.selftext;
+                tradeBody = result.selftext;
                 // Get author flair, which is really their steam profile url
-                const steamProfileLink = responseData[0].data.children[0].data.author_flair_text;
+                const steamProfileLink = result.author_flair_text;
                 if (steamProfileLink != null) {
-                	// Just get the last part after / which is their steam64 id
-                    steamid = steamProfileLink.split('/').pop();
+                    // Just get the last part after / which is their steam64 id
+                    steamId = steamProfileLink.split('/').pop();
                 }
 
-                if (trade_closed || trade_body == '[removed]' || trade_body == '[deleted]') {
+                if (tradeClosed || tradeBody === '[removed]' || tradeBody === '[deleted]') {
                     // mark as closed in DB
-                    trade_closed = 1;
-                    updateTradeLiveData(trade_id, trade_closed, steamid);
+                    tradeClosed = 1;
+                    updateTradeLiveData(tradeId, tradeClosed, steamId);
                 } else {
-                	// Not closed but lets still update the steamid
-                    updateTradeLiveData(trade_id, trade_closed, steamid);
+                    // Not closed but lets still update the steamid
+                    updateTradeLiveData(tradeId, tradeClosed, steamId);
                 }
-            }
 
-            res.json({ status: 1, closed: trade_closed, steamid });
-        });
+                res.json({ status: 1, closed: tradeClosed, steamid: steamId });
+
+            }, (error) => {
+                console.error(`getTradeLiveData request failed: ${error}`);
+                res.json({ status: 0 });
+            });
 
     } else {
         res.json({ status: 0 });
@@ -245,7 +254,7 @@ exports.getTradeLiveData = (req, res) => {
 
 function updateTradeLiveData(tradeid, closed, steamid) {
     mysql.getConnection((err, conn) => {
-        if (err || conn == 'undefined') {
+        if (err || conn === undefined) {
             console.log(`Error: Failed to conn to DB: ${err}`);
         } else {
             conn.query('UPDATE trades SET closed=?, steamid=? WHERE id=?', [closed, steamid, tradeid], () => {
@@ -286,7 +295,8 @@ exports.index = (req, res) => {
 
             if (currentPage > 1) start = (currentPage - 1) * pageSize;
 
-            const selectSql =				`${'SELECT id,username,steamid,type,closed,link,have,want,time '
+            const selectSql =
+                `${'SELECT id,username,steamid,type,closed,link,have,want,time '
 				+ 'FROM trades WHERE type IN (1,2,3) '
 				+ 'ORDER BY id DESC LIMIT '}${start} ,${pageSize}`;
 
