@@ -229,11 +229,12 @@ const goTradePlus = function () {
                                 verifyTradeUrls(response.steamid, data.trade_body.getElementsByTagName('a'), response.closed);
                             }
                         } else {
-                            data.trade_body.innerHTML = 'Error';
+                            data.trade_closed_elem.innerHTML = 'Error';
                         }
 
                     } catch (e) {
-                        data.trade_body.innerHTML = e;
+                        console.log(e);
+                        data.trade_closed_elem.innerHTML = 'Error';
                     }
                 },
             });

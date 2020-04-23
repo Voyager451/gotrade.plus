@@ -247,6 +247,7 @@ exports.getTradeLiveData = (req, res) => {
             });
 
     } else {
+        //console.info(`getTradeLiveData request data: ${error}`);
         res.json({ status: 0 });
     }
 
