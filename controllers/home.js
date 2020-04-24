@@ -138,12 +138,12 @@ function addPost(type, have, want, data) {
                 // We have a unique key on 'link' DB column, so sometimes we'll try to
                 //      insert the exact same reddit post twice, and it will throw a duplicate error
                 //      this is a hacky way to do this
-                console.info(`Ignoring duplicate DB post entry for ${link}`);
+                console.log(`Ignoring duplicate DB post entry for ${link}`);
                 return false;
             }
 
             if (err || (results == undefined)) {
-                console.error(`Error: Failed while inserting trade into DB: ${err}`);
+                console.log(`Error: Failed while inserting trade into DB: ${err}`);
                 return false;
             }
 
