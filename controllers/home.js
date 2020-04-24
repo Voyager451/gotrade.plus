@@ -27,7 +27,6 @@ const redditApi = new snoowrap({
     userAgent: process.env.REDDIT_USER_AGENT,
     clientId: process.env.REDDIT_CLIENT_ID,
     clientSecret: process.env.REDDIT_CLIENT_SECRET,
-    //refreshToken: process.env.REDDIT_REFRESH_TOKEN,
     username: process.env.REDDIT_USERNAME,
     password: process.env.REDDIT_PASSWORD,
 });
@@ -247,7 +246,7 @@ exports.getTradeLiveData = (req, res) => {
             });
 
     } else {
-        //console.info(`getTradeLiveData request data: ${error}`);
+        // console.info(`getTradeLiveData request data: ${error}`);
         res.json({ status: 0 });
     }
 

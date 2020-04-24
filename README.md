@@ -4,7 +4,7 @@ This repository is the full source code for https://gotrade.plus with an MIT lic
 
 [MySQL DB structure](https://gist.github.com/Voyager451/246d7ad4d2edf28daf5ad06e29dec6be)
 
-Here is also the [full database dump](http://www.filedropper.com/gotradeplus) (Dec. 12, 2017), containing **175,901** trades.
+Here is also the [full database SQL dump (gzipped)](https://drive.google.com/file/d/11BrHzp1BoQ_jqSpudmO8ZO2wrtqphAFu/view?usp=sharing) (April 23rd, 2020), containing **~800k trades**.
 
 Search engine is powered by  [Sphinx](http://sphinxsearch.com).
 
