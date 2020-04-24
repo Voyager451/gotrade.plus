@@ -131,11 +131,18 @@ function addPost(type, have, want, data) {
             console.log(`Error: Failed to conn to DB: ${err}`);
         }
 
-        conn.query('INSERT IGNORE INTO trades SET ?', trade_data, (err, results) => {
+        conn.query('INSERT INTO trades SET ?', trade_data, (err, results) => {
             conn.release();
 
+            if (err.includes('duplicate')) {
+                // We have a unique key on 'link' DB column, so sometimes we'll try to
+                //      insert the exact same reddit post twice, and it will throw a duplicate error
+                //      this is a hacky way to do this
+                return false;
+            }
+
             if (err || (results == undefined)) {
-                console.log(`Error: Failed while inserting trade into DB: ${err}`);
+                console.error(`Error: Failed while inserting trade into DB: ${err}`);
                 return false;
             }
 
