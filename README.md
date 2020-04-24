@@ -2,15 +2,14 @@
 
 This repository is the full source code for https://gotrade.plus with an MIT license.
 
-[MySQL DB structure](https://gist.github.com/Voyager451/246d7ad4d2edf28daf5ad06e29dec6be)
+- [MySQL DB structure](https://gist.github.com/Voyager451/246d7ad4d2edf28daf5ad06e29dec6be)
 
-Here is also the [full database SQL dump (gzipped)](https://drive.google.com/file/d/11BrHzp1BoQ_jqSpudmO8ZO2wrtqphAFu/view?usp=sharing) (April 23rd, 2020), containing **~800k trades**.
+- [Full database data dump (gzipped)](https://drive.google.com/file/d/11BrHzp1BoQ_jqSpudmO8ZO2wrtqphAFu/view?usp=sharing) (April 23rd, 2020), containing **~800k trades**.
 
-Search engine is powered by  [Sphinx](http://sphinxsearch.com).
+- Search engine is powered by  [Sphinx](http://sphinxsearch.com).
+- [DigitalOcean Sphinx Installation Guide for Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-sphinx-on-ubuntu-16-04)
 
-[DigitalOcean Sphinx Installation Guide for Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-sphinx-on-ubuntu-16-04)
-
-Edit config file: `sudo nano /etc/sphinxsearch/sphinx.conf` :
+- Edit config file: `sudo nano /etc/sphinxsearch/sphinx.conf` :
 
 ```
 source gotrade_plus
@@ -65,7 +64,7 @@ sudo service sphinxsearch stop
 sudo service sphinxsearch restart
 ```
 
-A cron-job indexes the searches from MySQL every 15 seconds (`sudo crontab -e`):
+- A cron-job indexes the searches from MySQL every 15 seconds (`sudo crontab -e`):
 ```
 * * * * * /usr/bin/indexer --rotate --config /etc/sphinxsearch/sphinx.conf --all
 * * * * * sleep 15; /usr/bin/indexer --rotate --config /etc/sphinxsearch/sphinx.conf --all
