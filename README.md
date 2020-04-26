@@ -1,6 +1,6 @@
 # GOTrade+
 
-This repository is the full source code for https://gotrade.plus with an MIT license.
+This repository is the full source code for https://gotrade.plus with an MIT license. 😎
 
 - [MySQL DB structure](https://gist.github.com/Voyager451/246d7ad4d2edf28daf5ad06e29dec6be)
 

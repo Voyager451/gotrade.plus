@@ -125,16 +125,16 @@ function addPost(type, have, want, data) {
     };
 
     // store trade post in DB
-    mysql.getConnection((err, conn) => {
+    mysql.getConnection((connErr, conn) => {
 
-        if (err || conn == 'undefined') {
-            console.log(`Error: Failed to conn to DB: ${err}`);
+        if (connErr || conn === undefined) {
+            console.log(`Error: Failed to conn to DB`);
         }
 
-        conn.query('INSERT INTO trades SET ?', trade_data, (err, results) => {
+        conn.query('INSERT INTO trades SET ?', trade_data, (queryErr, results) => {
             conn.release();
 
-            if (err && err.includes('duplicate')) {
+            if (queryErr && queryErr.sqlMessage && queryErr.sqlMessage.includes('duplicate')) {
                 // We have a unique key on 'link' DB column, so sometimes we'll try to
                 //      insert the exact same reddit post twice, and it will throw a duplicate error
                 //      this is a hacky way to do this
@@ -142,12 +142,13 @@ function addPost(type, have, want, data) {
                 return false;
             }
 
-            if (err || (results == undefined)) {
-                console.log(`Error: Failed while inserting trade into DB: ${err}`);
+            if (queryErr || (results === undefined)) {
+                // TODO:: improve MySQl error handling https://github.com/mysqljs/mysql#error-handling
+                console.log(`Error: Failed while inserting trade into DB: ${queryErr.sqlMessage}`);
                 return false;
             }
 
-            if (results.insertId != undefined && type != 4) {
+            if (results.insertId !== undefined && type !== 4) {
                 trade_data.id = results.insertId;
                 trade_data.body = null;
                 // emit new trade to connected socket.io clients
