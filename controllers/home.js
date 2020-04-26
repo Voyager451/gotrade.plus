@@ -129,7 +129,7 @@ function addPost(type, have, want, data) {
         conn.query('INSERT INTO trades SET ?', trade_data, (queryErr, results) => {
             conn.release();
 
-            if (queryErr && queryErr.sqlMessage && queryErr.sqlMessage.includes('duplicate')) {
+            if (queryErr && queryErr.sqlMessage && queryErr.sqlMessage.includes('Duplicate entry')) {
                 // We have a unique key on 'link' DB column, so sometimes we'll try to
                 //      insert the exact same reddit post twice, and it will throw a duplicate error
                 //      this is a hacky way to do this
