@@ -1,7 +1,8 @@
 const helpers = require('../helpers.js');
 
-const Snooper = require('reddit-snooper');
 const snoowrap = require('snoowrap');
+const snoostorm = require('snoostorm');
+
 const mysql = require('../config/mysql').mysql_pool;
 const marked = require('marked');
 
@@ -10,20 +11,7 @@ exports.passApp = function (_app) {
     app = _app;
 };
 
-// Setup reddit snooper
-const redditSnooper = new Snooper({
-    // credential information is not needed for snooper.watcher
-    username: process.env.REDDIT_USERNAME,
-    password: process.env.REDDIT_PASSWORD,
-    app_id: process.env.REDDIT_CLIENT_ID,
-    api_secret: process.env.REDDIT_CLIENT_SECRET,
-    user_agent: process.env.REDDIT_USER_AGENT,
-
-    automatic_retries: true,
-    requests_per_minuite: 1, // yes, minute is misspelled
-});
-
-const redditApi = new snoowrap({
+const redditClient = new snoowrap({
     userAgent: process.env.REDDIT_USER_AGENT,
     clientId: process.env.REDDIT_CLIENT_ID,
     clientSecret: process.env.REDDIT_CLIENT_SECRET,
@@ -31,76 +19,83 @@ const redditApi = new snoowrap({
     password: process.env.REDDIT_PASSWORD,
 });
 
-// Watch for new posts on our subreddit
-// TODO:: rewrite using 'snoowrap' lib
-redditSnooper.watcher.getPostWatcher('GlobalOffensiveTrade')
+const redditPollTime = 10000; // 10 seconds in milliseconds
+const submissions = new snoostorm.SubmissionStream(redditClient, {
+    subreddit: 'GlobalOffensiveTrade',
+    limit: 1,
+    pollTime: redditPollTime,
+});
 
-    .on('post', (post) => {
+submissions.on('item', (post) => {
+    handleNewPost(post);
+});
 
-        const { title } = post.data;
-        const _title = title.toLocaleLowerCase();
-        let type = 0;
-        let have = '';
-        let want = '';
+function handleNewPost(post) {
+    const { title } = post;
+    const titleLowerCase = title.toLocaleLowerCase();
+    let type = 0;
+    let have = '';
+    let want = '';
 
-        if (_title.indexOf('[h]') == 0 && _title.indexOf('[w]') != -1) {
-            // [have] / [want]
-            type = 1;
-            have =				title.substring(
-				    _title.lastIndexOf('[h]') + 3,
-				    _title.lastIndexOf('[w]'),
+    if (titleLowerCase.indexOf('[h]') == 0 && titleLowerCase.indexOf('[w]') != -1) {
+        // [have] / [want]
+        type = 1;
+        have =
+            title.substring(
+                titleLowerCase.lastIndexOf('[h]') + 3,
+                titleLowerCase.lastIndexOf('[w]'),
             ).trim();
 
-            want = title.substring(_title.lastIndexOf('[w]') + 3).trim();
+        want = title.substring(titleLowerCase.lastIndexOf('[w]') + 3).trim();
 
-        } else if (_title.indexOf('[lph]') == 0 && _title.indexOf('[w]') != -1) {
-            // [LPH] / [want]
-            type = 1;
-            have =				title.substring(
-				    _title.lastIndexOf('[lph]') + 5,
-				    _title.lastIndexOf('[w]'),
+    } else if (titleLowerCase.indexOf('[lph]') == 0 && titleLowerCase.indexOf('[w]') != -1) {
+        // [LPH] / [want]
+        type = 1;
+        have =
+            title.substring(
+                titleLowerCase.lastIndexOf('[lph]') + 5,
+                titleLowerCase.lastIndexOf('[w]'),
             ).trim();
 
-            want = title.substring(_title.lastIndexOf('[w]') + 3).trim();
+        want = title.substring(titleLowerCase.lastIndexOf('[w]') + 3).trim();
 
-        } else if (_title.indexOf('[w]') == 0 && _title.indexOf('[h]') != -1) {
-            // [want] / [have]
-            type = 2;
-            want =				title.substring(
-				    _title.lastIndexOf('[w]') + 3,
-				    _title.lastIndexOf('[h]'),
+    } else if (titleLowerCase.indexOf('[w]') == 0 && titleLowerCase.indexOf('[h]') != -1) {
+        // [want] / [have]
+        type = 2;
+        want =
+            title.substring(
+                titleLowerCase.lastIndexOf('[w]') + 3,
+                titleLowerCase.lastIndexOf('[h]'),
             ).trim();
 
-            have = title.substring(_title.lastIndexOf('[h]') + 3).trim();
+        have = title.substring(titleLowerCase.lastIndexOf('[h]') + 3).trim();
 
-        } else if (_title.indexOf('[store]') == 0) {
-            // [store]
-            type = 3;
-            have = title.substring(_title.lastIndexOf('[store]') + 7).trim();
+    } else if (titleLowerCase.indexOf('[store]') == 0) {
+        // [store]
+        type = 3;
+        have = title.substring(titleLowerCase.lastIndexOf('[store]') + 7).trim();
 
-        } else if (_title.indexOf('[pc]') == 0) {
-            // [price-check]
-            type = 4;
-            have = title.substring(_title.lastIndexOf('[pc]') + 4).trim();
+    } else if (titleLowerCase.indexOf('[pc]') == 0) {
+        // [price-check]
+        type = 4;
+        have = title.substring(titleLowerCase.lastIndexOf('[pc]') + 4).trim();
+    }
+
+    // we only care about trade related *type* of posts (any type other than 0)
+    if (type != 0) {
+        const body = post.selftext;
+        // if the body is empty, the post was most likely deleted
+        if (body != '') {
+            addPost(type, have, want, post);
         }
-
-        // we only care about trade related *type* of posts (any type other than 0)
-        if (type != 0) {
-            const body = post.data.selftext;
-            // if the body is empty, the post was most likely deleted
-            if (body != '') {
-                addPost(type, have, want, post.data);
-            }
-        }
-
-    })
-    .on('error', console.error);
+    }
+}
 
 // Add trade post to database
 function addPost(type, have, want, data) {
 
     const time = data.created_utc;
-    const username = data.author;
+    const username = data.author.name;
     const steamProfileLink = data.author_flair_text;
     let steamid = 0;
     const body = data.selftext;
@@ -218,7 +213,7 @@ exports.getTradeLiveData = (req, res) => {
 
     if (tradeId !== undefined && articleId !== undefined) {
 
-        redditApi
+        redditClient
             .getSubmission(articleId)
             .fetch()
             .then((result) => {

@@ -14,6 +14,7 @@
     "prefer-const": 1,
     "complexity": [ 1, 5 ],
     "no-use-before-define": "off",
-    "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }]
+    "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],
+    "operator-linebreak": ["warn", "after"]
   }
 }
