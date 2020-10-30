@@ -1,16 +1,16 @@
-const helpers = require('../helpers.js');
+const marked = require('marked');
 
 const snoowrap = require('snoowrap');
 const snoostorm = require('snoostorm');
 
 const mysql = require('../config/mysql').mysql_pool;
-const marked = require('marked');
 
 let app = null;
 exports.passApp = function (_app) {
     app = _app;
 };
 
+// eslint-disable-next-line new-cap
 const redditClient = new snoowrap({
     userAgent: process.env.REDDIT_USER_AGENT,
     clientId: process.env.REDDIT_CLIENT_ID,
@@ -19,10 +19,10 @@ const redditClient = new snoowrap({
     password: process.env.REDDIT_PASSWORD,
 });
 
-const redditPollTime = 10000; // 10 seconds in milliseconds
+const redditPollTime = 5000; // 5 seconds in milliseconds
 const submissions = new snoostorm.SubmissionStream(redditClient, {
     subreddit: 'GlobalOffensiveTrade',
-    limit: 1,
+    limit: 10,
     pollTime: redditPollTime,
 });
 
@@ -133,7 +133,7 @@ function addPost(type, have, want, data) {
                 // We have a unique key on 'link' DB column, so sometimes we'll try to
                 //      insert the exact same reddit post twice, and it will throw a duplicate error
                 //      this is a hacky way to do this
-                console.log(`Ignoring duplicate DB post entry for ${link}`);
+                // console.log(`Ignoring duplicate DB post entry for ${link}`);
                 return false;
             }
 
@@ -176,8 +176,8 @@ exports.getTradeBody = (req, res) => {
 
                 if (
                     err || (results == undefined)
-					|| (results[0] == undefined)
-					|| (results[0].body == undefined)
+                    || (results[0] == undefined)
+                    || (results[0].body == undefined)
                 ) {
                     console.log(`Error: Failed while selecting trade_body from DB: ${err}`);
                     res.json({ status: 0 });
@@ -301,8 +301,8 @@ exports.index = (req, res) => {
 
             const selectSql =
                 `${'SELECT id,username,steamid,type,closed,link,have,want,time '
-				+ 'FROM trades WHERE type IN (1,2,3) '
-				+ 'ORDER BY id DESC LIMIT '}${start} ,${pageSize}`;
+                + 'FROM trades WHERE type IN (1,2,3) '
+                + 'ORDER BY id DESC LIMIT '}${start} ,${pageSize}`;
 
             conn.query(selectSql, (err, trades) => {
 
