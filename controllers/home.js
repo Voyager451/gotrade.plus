@@ -22,14 +22,12 @@ const redditClient = new snoowrap({
 const redditPollTime = 5000; // 5 seconds in milliseconds
 const submissions = new snoostorm.SubmissionStream(redditClient, {
     subreddit: 'GlobalOffensiveTrade',
-    limit: 15,
+    limit: 10,
     pollTime: redditPollTime,
 });
 
-submissions.on('item', (posts) => {
-    posts.forEach((post) => {
-        handleNewPost(post);
-    });
+submissions.on('item', (post) => {
+    handleNewPost(post);
 });
 
 function handleNewPost(post) {
